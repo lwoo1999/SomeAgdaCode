@@ -127,5 +127,7 @@ isoUnMaybe
                                                                                       (trans ≡nothing₁ (sym ≡nothing₂))
     ...                                                                             | ()
 
+    -- same as above
+    -- I do not want to write it again...
     pqp : ∀ p → (q→p (p→q p)) ≡ p
     pqp p = {!!}
