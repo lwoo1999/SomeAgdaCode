@@ -1,6 +1,9 @@
+module Isomorphism where
+
 open import Data.Maybe
+open import Data.Nat hiding (_⊔_)
 open import Function
-open import Level
+open import Level hiding (suc)
 open import Relation.Binary.PropositionalEquality
 
 postulate
@@ -17,39 +20,58 @@ record _↔_ {α β} (P : Set α) (Q : Set β) : Set (α ⊔ β) where
     qpq : p→q ∘ q→p ≡ id
 
 ↔trans : ∀ {α β} {P : Set α} {Q : Set β} → P ↔ Q → Q ↔ P
-↔trans record
-       { p→q = p→q
-       ; q→p = q→p
-       ; pqp = pqp
-       ; qpq = qpq
-       }
-       =
-       record
-       { p→q = q→p
-       ; q→p = p→q
-       ; pqp = qpq
-       ; qpq = pqp
-       }
+↔trans
+  record
+  { p→q = p→q
+  ; q→p = q→p
+  ; pqp = pqp
+  ; qpq = qpq
+  }
+  =
+  record
+  { p→q = q→p
+  ; q→p = p→q
+  ; pqp = qpq
+  ; qpq = pqp
+  }
 
 lemma : ∀ {α β} {P : Set α} {Q : Set β} (p↔q : P ↔ Q) →
         ∀ p₁ p₂ → _↔_.p→q p↔q p₁ ≡ _↔_.p→q p↔q p₂ → p₁ ≡ p₂
-lemma record
-      { p→q = p→q
-      ; q→p = q→p
-      ; pqp = pqp
-      ; qpq = qpq
-      }
-      p₁ p₂ q≡ = begin
-        p₁
-          ≡⟨ cong (_|>_ p₁) (sym pqp) ⟩
-        q→p (p→q p₁)
-          ≡⟨ cong q→p q≡ ⟩
-        q→p (p→q p₂)
-          ≡⟨ cong (_|>_ p₂) pqp ⟩
-        p₂
-          ∎
-      where
-        open ≡-Reasoning
+lemma
+  record
+  { p→q = p→q
+  ; q→p = q→p
+  ; pqp = pqp
+  ; qpq = qpq
+  }
+  p₁ p₂ q≡ = begin
+    p₁
+      ≡⟨ cong (_|>_ p₁) (sym pqp) ⟩
+    q→p (p→q p₁)
+      ≡⟨ cong q→p q≡ ⟩
+    q→p (p→q p₂)
+      ≡⟨ cong (_|>_ p₂) pqp ⟩
+    p₂
+      ∎
+    where
+      open ≡-Reasoning
+
+isoMaybeNat : Maybe ℕ ↔ ℕ
+isoMaybeNat =
+  record
+  { p→q = λ { nothing → 0
+            ; (just n) → suc n
+            }
+  ; q→p = λ { 0 → nothing
+            ; (suc n) → just n
+            }
+  ; pqp = extensionality λ { (just _) → refl
+                           ; nothing → refl
+                           }
+  ; qpq = extensionality λ { 0 → refl
+                           ; (suc _) → refl
+                           }
+  }
 
 isoUnMaybe : ∀ {α β} (P : Set α) (Q : Set β) → Maybe P ↔ Maybe Q → P ↔ Q
 isoUnMaybe
@@ -88,14 +110,25 @@ isoUnMaybe
 
     lempq₁ : ∀ p q → mp→mq (just p) ≡ just q → p→q p ≡ q
     lempq₁ p q meq with mp→mq (just p) | inspect mp→mq (just p)
-    ...               | just q1        | _ = just-injective meq
+    ...               | just _         | _ = just-injective meq
     lempq₁ p q ()     | nothing        | _
 
-    lempq₂ : ∀ p q → mp→mq (just p) ≡ nothing → mp→mq nothing ≡ (just q) → p→q p ≡ q
+    lemqp₁ : ∀ p q → mq→mp (just q) ≡ just p → q→p q ≡ p
+    lemqp₁ p q meq with mq→mp (just q) | inspect mq→mp (just q)
+    ...               | just _         | _ = just-injective meq
+    lemqp₁ p q ()     | nothing        | _
+
+    lempq₂ : ∀ p q → mp→mq (just p) ≡ nothing → mp→mq nothing ≡ just q → p→q p ≡ q
     lempq₂ p q j≡n n≡j with mp→mq (just p) | inspect mp→mq (just p) | mp→mq nothing | inspect mp→mq nothing
-    ...                   | nothing        | _                      | just q1       | _ = just-injective n≡j
+    ...                   | nothing        | _                      | just _        | _ = just-injective n≡j
     lempq₂ p q j≡n ()     | nothing        | _                      | nothing       | _
-    lempq₂ p q () n≡j     | just q1        | _                      | _             | _
+    lempq₂ p q () n≡j     | just _         | _                      | _             | _
+
+    lemqp₂ : ∀ p q → mq→mp (just q) ≡ nothing → mq→mp nothing ≡ just p → q→p q ≡ p
+    lemqp₂ p q j≡n n≡j with mq→mp (just q) | inspect mq→mp (just q) | mq→mp nothing | inspect mq→mp nothing
+    ...                   | nothing        | _                      | just _        | _ = just-injective n≡j
+    lemqp₂ p q j≡n ()     | nothing        | _                      | nothing       | _
+    lemqp₂ p q () n≡j     | just _         | _                      | _             | _
 
     qpq : ∀ q → (p→q (q→p q)) ≡ q
     qpq q with mq→mp (just q) | inspect mq→mp (just q)
@@ -127,7 +160,31 @@ isoUnMaybe
                                                                                       (trans ≡nothing₁ (sym ≡nothing₂))
     ...                                                                             | ()
 
-    -- same as above
-    -- I do not want to write it again...
     pqp : ∀ p → (q→p (p→q p)) ≡ p
-    pqp p = {!!}
+    pqp p with mp→mq (just p) | inspect mp→mq (just p)
+    ...      | just q         | [ ≡just ]     = lemqp₁ p q (begin
+      mq→mp (just q)
+        ≡⟨ sym (cong mq→mp ≡just) ⟩
+      mq→mp (mp→mq (just p))
+        ≡⟨ cong (_|>_ (just p)) mpqp ⟩
+      just p
+        ∎)
+    ...      | nothing        | [ ≡nothing₁ ] with mp→mq nothing | inspect mp→mq nothing
+    ...                                          | just q        | [ ≡just ]     = lemqp₂ p q
+        (begin
+      mq→mp (just q)
+        ≡⟨ sym (cong mq→mp ≡just) ⟩
+      mq→mp (mp→mq nothing)
+        ≡⟨ cong (_|>_ nothing) mpqp ⟩
+      nothing
+        ∎)
+        (begin
+      mq→mp nothing
+        ≡⟨ sym (cong mq→mp ≡nothing₁) ⟩
+      mq→mp (mp→mq (just p))
+        ≡⟨ cong (_|>_ (just p)) mpqp ⟩
+      just p
+        ∎)
+    ...                                          | nothing       | [ ≡nothing₂ ] with lemma mp↔mq (just p) nothing
+                                                                                      (trans ≡nothing₁ (sym ≡nothing₂))
+    ...                                                                             | ()
