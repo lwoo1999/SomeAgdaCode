@@ -7,6 +7,8 @@ open import Data.Vec renaming (Vec to 𝕍)
 open import Function
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Relation.Binary.PropositionalEquality
+  hiding ([_])
+
 
 transpose : ∀ {ℓ m n} {A : Set ℓ} → 𝕍 (𝕍 A n) m → 𝕍 (𝕍 A m) n
 transpose {n = zero} [] = []
@@ -49,11 +51,9 @@ qsort₁ 0 n z≤n [] = []
 qsort₁ (suc m) (suc n) (s≤s m≤n) (x ∷ xs)
   rewrite sym (filter-id (lesseq x) xs)
         = subst (𝕍 ℕ)
-          (cong (λ x → x + r) (+-comm l 1))
-          ((qsort₁ l n l≤n left ++ (x ∷ [])) ++
-          qsort₁ r n r≤n right)
+          (solve 2 (λ l r → l :+ (con 1 :+ r) := con 1 :+ l :+ r) refl l r)
+          (qsort₁ l n l≤n left ++ [ x ] ++ qsort₁ r n r≤n right)
   where
-
     lf : ∃[ n ] 𝕍 ℕ n
     lf = filter (lesseq x) xs
   
@@ -83,6 +83,7 @@ qsort₁ (suc m) (suc n) (s≤s m≤n) (x ∷ xs)
       where
         open ≤-Reasoning
 
+        
     r≤n : r ≤ n
     r≤n = begin
       r
@@ -95,7 +96,9 @@ qsort₁ (suc m) (suc n) (s≤s m≤n) (x ∷ xs)
         ∎
       where
         open ≤-Reasoning
-      
+
+    open SemiringSolver
+
 qsort : ∀ {m} → 𝕍 ℕ m → 𝕍 ℕ m
 qsort {m} = qsort₁ m m ≤-refl
 
