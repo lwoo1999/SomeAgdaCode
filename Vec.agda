@@ -6,31 +6,30 @@ open import Data.Bool renaming (Bool to 𝔹)
 open import Data.Vec renaming (Vec to 𝕍)
 open import Function
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
+  hiding (zip)
 open import Relation.Binary.PropositionalEquality
   hiding ([_])
 
-
 transpose : ∀ {ℓ m n} {A : Set ℓ} → 𝕍 (𝕍 A n) m → 𝕍 (𝕍 A m) n
 transpose {n = zero} [] = []
-transpose {n = suc n} [] = [] ∷ transpose []
-transpose (row ∷ rows) = zipWith (flip _∷_) (transpose rows) row
-{- why white -}
+transpose {n = suc n} [] = [] ∷ (transpose [])
+transpose (xs ∷ xss) = zipWith (flip _∷_) (transpose xss) xs
 
-test_transpose : transpose (
-                 (1 ∷ 2 ∷ 3 ∷ []) ∷
-                 (4 ∷ 5 ∷ 6 ∷ []) ∷
-                 (7 ∷ 8 ∷ 9 ∷ []) ∷ []
-                 ) ≡
-                 (1 ∷ 4 ∷ 7 ∷ []) ∷
-                 (2 ∷ 5 ∷ 8 ∷ []) ∷
-                 (3 ∷ 6 ∷ 9 ∷ []) ∷ []
-test_transpose = refl
+_ : transpose (
+    (1 ∷ 2 ∷ 3 ∷ []) ∷
+    (4 ∷ 5 ∷ 6 ∷ []) ∷
+    (7 ∷ 8 ∷ 9 ∷ []) ∷ []
+    ) ≡
+    (1 ∷ 4 ∷ 7 ∷ []) ∷
+    (2 ∷ 5 ∷ 8 ∷ []) ∷
+    (3 ∷ 6 ∷ 9 ∷ []) ∷ []
+_ = refl
 
 filter : ∀ {ℓ m} {A : Set ℓ} (p : A → 𝔹) → 𝕍 A m → ∃[ n ] 𝕍 A n
 filter p [] = zero , []
 filter p (x ∷ xs) with p x   | filter p xs
-...                   | true  | n , ind = (suc n) , x ∷ ind
-...                   | false | n , ind = n , ind
+...                  | true  | n , ind = (suc n) , x ∷ ind
+...                  | false | n , ind = n , ind
 
 filter-id : ∀ {ℓ m} {A : Set ℓ} (p : A → 𝔹) (xs : 𝕍 A m) →
             fst (filter p xs) + fst (filter (not ∘ p) xs) ≡ m
@@ -97,17 +96,18 @@ qsort₁ (suc m) (suc n) (s≤s m≤n) (x ∷ xs)
       where
         open ≤-Reasoning
 
-    open SemiringSolver
+    open import Data.Nat.Solver
+    open +-*-Solver
 
 qsort : ∀ {m} → 𝕍 ℕ m → 𝕍 ℕ m
 qsort {m} = qsort₁ m m ≤-refl
 
-test_qsort₁ : qsort (1 ∷ 3 ∷ 8 ∷ 4 ∷ 9 ∷ [])
-              ≡
-              9 ∷ 8 ∷ 4 ∷ 3 ∷ 1 ∷ []
-test_qsort₁ = refl
+_ : qsort (1 ∷ 3 ∷ 8 ∷ 4 ∷ 9 ∷ [])
+          ≡
+          9 ∷ 8 ∷ 4 ∷ 3 ∷ 1 ∷ []
+_ = refl
 
-test_qsort₂ : qsort (7 ∷ 8 ∷ 4 ∷ 4 ∷ 1 ∷ [])
-              ≡
-              8 ∷ 7 ∷ 4 ∷ 4 ∷ 1 ∷ []
-test_qsort₂ = refl
+_ : qsort (7 ∷ 8 ∷ 4 ∷ 4 ∷ 1 ∷ [])
+    ≡
+    8 ∷ 7 ∷ 4 ∷ 4 ∷ 1 ∷ []
+_ = refl  
